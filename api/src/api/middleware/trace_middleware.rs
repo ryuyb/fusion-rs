@@ -1,18 +1,18 @@
-use std::sync::Arc;
+use crate::AppState;
+use axum::Router;
 use axum::extract::Request;
 use axum::http::HeaderName;
-use axum::Router;
+use std::sync::Arc;
 use tower::ServiceBuilder;
 use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
 use tower_http::trace::TraceLayer;
 use tracing::{error, info_span};
-use crate::AppState;
 
 const REQUEST_ID_HEADER: &str = "x-request-id";
 
 pub fn trace(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> {
     let x_request_id = HeaderName::from_static(REQUEST_ID_HEADER);
-    
+
     router.layer(
         ServiceBuilder::new()
             .layer(SetRequestIdLayer::new(

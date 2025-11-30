@@ -47,6 +47,7 @@ impl AppError {
             AppError::Unauthorized(_) => StatusCode::UNAUTHORIZED,
             AppError::Forbidden(_) => StatusCode::FORBIDDEN,
             AppError::NotFound { .. } => StatusCode::NOT_FOUND,
+            AppError::Duplicate { .. } => StatusCode::CONFLICT,
         }
     }
 
@@ -55,6 +56,17 @@ impl AppError {
 
         match self {
             Self::NotFound {
+                entity,
+                field,
+                value,
+            } => {
+                response = response.with_details(json!({
+                    "entity": entity,
+                    "field": field,
+                    "value": value,
+                }))
+            }
+            Self::Duplicate {
                 entity,
                 field,
                 value,

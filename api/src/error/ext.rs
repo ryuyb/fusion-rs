@@ -23,4 +23,12 @@ pub trait Entity {
             value: value.to_string(),
         }
     }
+
+    fn duplicated_by(field: &str, value: impl ToString) -> AppError {
+        AppError::Duplicate {
+            entity: Self::NAME.to_string(),
+            field: field.to_string(),
+            value: value.to_string(),
+        }
+    }
 }

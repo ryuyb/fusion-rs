@@ -20,6 +20,13 @@ pub enum AppError {
         field: String,
         value: String,
     },
+
+    #[error("Duplicate entry: {entity} with {field}={value}")]
+    Duplicate {
+        entity: String,
+        field: String,
+        value: String,
+    },
 }
 
 impl From<anyhow::Error> for AppError {
