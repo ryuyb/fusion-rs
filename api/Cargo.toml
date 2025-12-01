@@ -11,10 +11,11 @@ tower = "0.5"
 tower-http = { version = "0.6", features = ["timeout", "cors", "trace", "request-id", "compression-full"] }
 
 config = { version = "0.15", features = ["yaml", "toml"] }
-dotenvy = "0.15"
 
 anyhow = "1"
 thiserror = "2"
+
+argon2 = { version = "0.6.0-rc.2", features = ["getrandom"] }
 
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }

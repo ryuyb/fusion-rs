@@ -1,6 +1,7 @@
 use crate::dto::{CreateUserDto, PagedResponse, UserDto};
-use crate::error::{AppResult, Entity, IntoAppResult};
+use crate::error::{AppError, AppResult, Entity, IntoAppResult};
 use crate::repository::UserRepository;
+use crate::utils::password;
 use entity::user::Model;
 use std::sync::Arc;
 
@@ -30,7 +31,11 @@ impl UserService {
         {
             return Err(Model::duplicated_by("email", user.email));
         }
-        Ok(self.repo.create(&user).await?.into())
+        let hashed_password = password::hash_password(&user.password).map_err(|err| {
+            AppError::InternalServerError(format!("Failed to hash password: {err}"))
+        })?;
+
+        Ok(self.repo.create(&user, &hashed_password).await?.into())
     }
 
     pub async fn find_by_id(&self, id: i32) -> AppResult<UserDto> {

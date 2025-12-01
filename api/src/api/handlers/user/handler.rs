@@ -1,8 +1,8 @@
+use crate::AppState;
 use crate::dto::{CreateUserDto, UserDto};
 use crate::error::AppResult;
-use crate::AppState;
-use axum::extract::{Path, State};
 use axum::Json;
+use axum::extract::{Path, State};
 use std::sync::Arc;
 
 pub async fn create(

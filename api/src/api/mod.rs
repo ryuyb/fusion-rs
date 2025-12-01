@@ -1,3 +1,3 @@
-pub mod routes;
-mod middleware;
 mod handlers;
+mod middleware;
+pub mod routes;

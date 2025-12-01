@@ -1,6 +1,6 @@
+use crate::AppState;
 use crate::api::{handlers, middleware};
 use crate::error::ErrorResponse;
-use crate::AppState;
 use axum::http::StatusCode;
 use axum::middleware::from_fn;
 use axum::response::IntoResponse;
@@ -49,5 +49,8 @@ async fn health_check() -> Json<HashMap<String, String>> {
 }
 
 async fn handler_404() -> (StatusCode, impl IntoResponse) {
-    (StatusCode::NOT_FOUND, Json(ErrorResponse::new("nothing to see here".to_string())))
+    (
+        StatusCode::NOT_FOUND,
+        Json(ErrorResponse::new("nothing to see here".to_string())),
+    )
 }

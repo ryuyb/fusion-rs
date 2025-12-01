@@ -222,7 +222,7 @@ impl DatabaseConfig {
             .to_owned();
         let db = Database::connect(opt)
             .await
-            .expect("Database connection failed");
+            .context("Database connection failed")?;
 
         if self.run_migrations {
             tracing::info!("Running database migrations");

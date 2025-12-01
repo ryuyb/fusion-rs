@@ -13,12 +13,12 @@ impl UserRepository {
         Self { db }
     }
 
-    pub async fn create(&self, data: &CreateUserDto) -> AppResult<Model> {
+    pub async fn create(&self, data: &CreateUserDto, password_hash: &str) -> AppResult<Model> {
         let user = ActiveModel {
             id: Default::default(),
             username: Set(data.username.clone()),
             email: Set(data.email.clone()),
-            password: Set(data.password.clone()),
+            password: Set(password_hash.to_string()),
             created_at: Default::default(),
             updated_at: Default::default(),
         };

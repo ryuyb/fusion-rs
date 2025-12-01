@@ -8,11 +8,9 @@ fn main() {
 
     match args.command {
         Commands::Serve => api::main(),
-        Commands::Migrate(migrate_args) => {
-            match migrate_args.direction {
-                MigrateCommands::Up => println!("up"),
-                MigrateCommands::Down => println!("down"),
-            }
-        }
+        Commands::Migrate(migrate_args) => match migrate_args.direction {
+            MigrateCommands::Up => println!("up"),
+            MigrateCommands::Down => println!("down"),
+        },
     }
 }
