@@ -2,6 +2,8 @@ environment = "development"
 
 [database]
 url = "postgres://postgres:postgres@localhost:5432/fusion"
+sqlx_logging = false
+sqlx_logging_level = "info"
 
 [logging]
 level = "debug"

@@ -1,4 +1,4 @@
-use super::logging::LoggingConfig;
+use super::logging::{LogLevel as LoggingLevel, LoggingConfig};
 use anyhow::Context;
 use config::{Config as ConfigBuilder, Environment, File as ConfigFile};
 use serde::Deserialize;
@@ -106,6 +106,12 @@ pub struct DatabaseConfig {
 
     #[serde(default = "default_true")]
     pub run_migrations: bool,
+
+    #[serde(default)]
+    pub sqlx_logging: bool,
+
+    #[serde(default = "default_sqlx_log_level")]
+    pub sqlx_logging_level: LoggingLevel,
 }
 
 // ============ Default value fn  ============
@@ -141,6 +147,18 @@ fn default_db_max_lifetime() -> u64 {
 }
 fn default_true() -> bool {
     true
+}
+fn default_sqlx_log_level() -> LoggingLevel {
+    LoggingLevel::Info
+}
+fn logging_level_to_log_filter(level: LoggingLevel) -> log::LevelFilter {
+    match level {
+        LoggingLevel::Error => log::LevelFilter::Error,
+        LoggingLevel::Warn => log::LevelFilter::Warn,
+        LoggingLevel::Info => log::LevelFilter::Info,
+        LoggingLevel::Debug => log::LevelFilter::Debug,
+        LoggingLevel::Trace => log::LevelFilter::Trace,
+    }
 }
 impl Config {
     pub fn load() -> anyhow::Result<Self> {
@@ -224,8 +242,8 @@ impl DatabaseConfig {
             .acquire_timeout(Duration::from_secs(self.connect_timeout_secs))
             .idle_timeout(Some(Duration::from_secs(self.idle_timeout_secs)))
             .max_lifetime(Some(Duration::from_secs(self.max_lifetime_secs)))
-            .sqlx_logging(false)
-            .sqlx_logging_level(log::LevelFilter::Info)
+            .sqlx_logging(self.sqlx_logging)
+            .sqlx_logging_level(logging_level_to_log_filter(self.sqlx_logging_level))
             .to_owned();
         let db = Database::connect(opt)
             .await

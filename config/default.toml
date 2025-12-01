@@ -18,6 +18,8 @@ connect_timeout_secs = 15
 idle_timeout_secs = 600
 max_lifetime_secs = 1800
 run_migrations = true
+sqlx_logging = false
+sqlx_logging_level = "info"
 
 [logging]
 level = "info"
