@@ -1,3 +1,5 @@
+use crate::error::db::map_db_error;
+use sea_orm::DbErr;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -35,9 +37,9 @@ impl From<anyhow::Error> for AppError {
     }
 }
 
-impl From<sea_orm::DbErr> for AppError {
-    fn from(e: sea_orm::DbErr) -> Self {
-        Self::InternalServerError(e.to_string())
+impl From<DbErr> for AppError {
+    fn from(e: DbErr) -> Self {
+        map_db_error(e)
     }
 }
 

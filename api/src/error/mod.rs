@@ -1,3 +1,4 @@
+pub mod db;
 mod ext;
 mod response;
 mod types;

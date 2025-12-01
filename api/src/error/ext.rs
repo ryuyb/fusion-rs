@@ -24,6 +24,7 @@ pub trait Entity {
         }
     }
 
+    #[allow(dead_code)]
     fn duplicated_by(field: &str, value: impl ToString) -> AppError {
         AppError::Duplicate {
             entity: Self::NAME.to_string(),

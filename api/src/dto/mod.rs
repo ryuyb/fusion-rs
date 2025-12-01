@@ -5,12 +5,6 @@ use std::num::NonZeroU64;
 pub use user::*;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct PageRequest {
-    pub page: u64,
-    pub page_size: u64,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 pub struct PagedResponse<T> {
     pub items: Vec<T>,
     pub total: u64,

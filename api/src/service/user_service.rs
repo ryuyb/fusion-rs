@@ -16,22 +16,6 @@ impl UserService {
     }
 
     pub async fn create(&self, user: CreateUserDto) -> AppResult<UserDto> {
-        if self
-            .repo
-            .find_by_username(user.username.as_str())
-            .await?
-            .is_some()
-        {
-            return Err(Model::duplicated_by("username", user.username));
-        }
-        if self
-            .repo
-            .find_by_email(user.email.as_str())
-            .await?
-            .is_some()
-        {
-            return Err(Model::duplicated_by("email", user.email));
-        }
         let hashed_password = password::hash_password(&user.password).map_err(|err| {
             AppError::InternalServerError(format!("Failed to hash password: {err}"))
         })?;
