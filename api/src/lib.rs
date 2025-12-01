@@ -86,6 +86,7 @@ pub async fn main() {
         .logging
         .init_subscriber()
         .expect("Failed to initialize logging");
+    tracing_log::LogTracer::init().expect("Failed to set logger");
 
     tracing::info!(
         "Configuration loaded for environment: {}",
