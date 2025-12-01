@@ -1,6 +1,7 @@
 mod user;
 
 use serde::{Deserialize, Serialize};
+use std::num::NonZeroU64;
 pub use user::*;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -19,14 +20,15 @@ pub struct PagedResponse<T> {
 }
 
 impl<T> PagedResponse<T> {
-    pub fn new(items: Vec<T>, total: u64, page: u64, page_size: u64) -> Self {
-        let total_pages = (total + page_size - 1) / page_size;
+    pub fn new(items: Vec<T>, total: u64, page: u64, page_size: NonZeroU64) -> Self {
+        let page_size_value = page_size.get();
+        let total_pages = (total + page_size_value - 1) / page_size_value;
 
         Self {
             items,
             total,
             page,
-            page_size,
+            page_size: page_size_value,
             total_pages,
         }
     }

@@ -3,6 +3,7 @@ use crate::error::{AppError, AppResult, Entity, IntoAppResult};
 use crate::repository::UserRepository;
 use crate::utils::password;
 use entity::user::Model;
+use std::num::NonZeroU64;
 use std::sync::Arc;
 
 pub struct UserService {
@@ -47,8 +48,12 @@ impl UserService {
             .into_app_result()
     }
 
-    pub async fn list(&self, page: u64, page_size: u64) -> AppResult<PagedResponse<UserDto>> {
-        let (total, items) = self.repo.list(page, page_size).await?;
+    pub async fn list(
+        &self,
+        page: u64,
+        page_size: NonZeroU64,
+    ) -> AppResult<PagedResponse<UserDto>> {
+        let (total, items) = self.repo.list(page - 1, page_size.get()).await?;
         let items = items
             .iter()
             .map(|item| UserDto::from(item.to_owned()))

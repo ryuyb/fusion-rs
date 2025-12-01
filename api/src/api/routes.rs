@@ -38,7 +38,7 @@ pub fn create_router(state: Arc<AppState>) -> Router {
 
 fn user_routes() -> Router<Arc<AppState>> {
     Router::new()
-        .route("/", post(handlers::user::create))
+        .route("/", post(handlers::user::create).get(handlers::user::list))
         .route("/{id}", get(handlers::user::find_by_id))
 }
 
