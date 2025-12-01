@@ -11,7 +11,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 RUN apt-get update \
     && apt-get -y --no-install-recommends install \
-        sudo curl git ca-certificates build-essential pkg-config libssl-dev \
+        sudo curl git ca-certificates build-essential pkg-config libssl-dev musl-tools \
     && rm -rf /var/lib/apt/lists/*
 
 RUN curl https://mise.run | sh
@@ -19,7 +19,7 @@ RUN curl https://mise.run | sh
 WORKDIR /app
 
 COPY mise.toml .
-RUN mise trust && mise install
+RUN mise trust && mise install && mise exec -- rustup target add x86_64-unknown-linux-musl aarch64-unknown-linux-musl
 
 # Pre-copy manifests for dependency caching.
 COPY Cargo.toml Cargo.lock ./
@@ -40,10 +40,9 @@ COPY . .
 ARG TARGETARCH
 RUN case "$TARGETARCH" in \
         arm64) \
-            export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc && \
-            export CARGO_BUILD_TARGET=aarch64-unknown-linux-gnu ;; \
+            export CARGO_BUILD_TARGET=aarch64-unknown-linux-musl ;; \
         amd64) \
-            export CARGO_BUILD_TARGET=x86_64-unknown-linux-gnu ;; \
+            export CARGO_BUILD_TARGET=x86_64-unknown-linux-musl ;; \
         *) \
             export CARGO_BUILD_TARGET="" ;; \
     esac && \
@@ -53,18 +52,19 @@ RUN case "$TARGETARCH" in \
     else \
         mise exec -- cargo build --release --bin fusion && \
         cp target/release/fusion /tmp/fusion-bin; \
-    fi
+    fi && \
+    strip /tmp/fusion-bin
 
-FROM gcr.io/distroless/cc-debian12 AS runtime
+FROM gcr.io/distroless/static-debian12:nonroot AS runtime
 
 ENV APP_HOME=/app \
     FUSION_CONFIG_DIR=/app/config
 
 WORKDIR ${APP_HOME}
 
-COPY --from=builder /tmp/fusion-bin /usr/local/bin/fusion
+COPY --from=builder /tmp/fusion-bin /fusion
 COPY config ./config
 
 EXPOSE 8080
 
-ENTRYPOINT ["/usr/local/bin/fusion", "serve"]
+ENTRYPOINT ["/fusion", "serve"]
