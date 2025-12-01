@@ -80,21 +80,17 @@ async fn shutdown_signal() {
 
 #[tokio::main]
 pub async fn main() {
-    use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-                format!(
-                    "{}=debug,tower_http=debug,axum::rejection=trace",
-                    env!("CARGO_CRATE_NAME")
-                )
-                .into()
-            }),
-        )
-        .with(tracing_subscriber::fmt::layer())
-        .init();
-
     let app_config = config::load().expect("Failed to load configuration");
+
+    let _logging_guard = app_config
+        .logging
+        .init_subscriber()
+        .expect("Failed to initialize logging");
+
+    tracing::info!(
+        "Configuration loaded for environment: {}",
+        app_config.environment.as_str()
+    );
 
     let app = match Application::build(app_config).await {
         Ok(app) => app,

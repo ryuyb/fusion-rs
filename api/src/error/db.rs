@@ -1,5 +1,5 @@
 use crate::error::AppError;
-use sea_orm::{sqlx, DbErr, RuntimeErr};
+use sea_orm::{DbErr, RuntimeErr, sqlx};
 
 pub fn map_db_error(err: DbErr) -> AppError {
     if let Some(mapped) = try_map_sqlx_error(&err) {

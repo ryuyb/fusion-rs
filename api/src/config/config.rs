@@ -1,8 +1,8 @@
+use super::logging::LoggingConfig;
 use anyhow::Context;
-use config::{Config as ConfigBuilder, Environment, File};
+use config::{Config as ConfigBuilder, Environment, File as ConfigFile};
 use serde::Deserialize;
-use std::env;
-use std::str::FromStr;
+use std::{env, str::FromStr};
 use tracing::log;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
@@ -54,6 +54,9 @@ pub struct Config {
     pub server: ServerConfig,
 
     pub database: DatabaseConfig,
+
+    #[serde(default)]
+    pub logging: LoggingConfig,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -139,18 +142,20 @@ fn default_db_max_lifetime() -> u64 {
 fn default_true() -> bool {
     true
 }
-
 impl Config {
     pub fn load() -> anyhow::Result<Self> {
         let run_env = env::var("FUSION_APP_ENV").unwrap_or_else(|_| "development".into());
-        tracing::info!("Loading configuration for environment: {}", run_env);
 
         let config_dir = env::var("FUSION_CONFIG_DIR").unwrap_or_else(|_| "config".into());
 
         let configs = ConfigBuilder::builder()
-            .add_source(File::with_name(&format!("{}/default", config_dir)).required(false))
-            .add_source(File::with_name(&format!("{}/{}", config_dir, run_env)).required(false))
-            .add_source(File::with_name(&format!("{}/local", config_dir).as_ref()).required(false))
+            .add_source(ConfigFile::with_name(&format!("{}/default", config_dir)).required(false))
+            .add_source(
+                ConfigFile::with_name(&format!("{}/{}", config_dir, run_env)).required(false),
+            )
+            .add_source(
+                ConfigFile::with_name(&format!("{}/local", config_dir).as_ref()).required(false),
+            )
             .add_source(
                 Environment::with_prefix("FUSION")
                     .separator("_")
@@ -170,7 +175,7 @@ impl Config {
 
     pub fn load_from(path: &str) -> anyhow::Result<Self> {
         let settings = ConfigBuilder::builder()
-            .add_source(File::with_name(path))
+            .add_source(ConfigFile::with_name(path))
             .add_source(
                 Environment::with_prefix("FUSION")
                     .separator("_")
@@ -192,6 +197,8 @@ impl Config {
         if self.server.port == 0 {
             anyhow::bail!("Invalid server port: {}", self.server.port);
         }
+
+        self.logging.validate()?;
 
         Ok(())
     }

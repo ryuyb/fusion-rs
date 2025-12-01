@@ -2,3 +2,21 @@ environment = "development"
 
 [database]
 url = "postgres://postgres:postgres@localhost:5432/fusion"
+
+[logging]
+level = "debug"
+console_enabled = true
+console_color = true
+format = "full"
+
+[logging.file]
+path = "log/dev-fusion.log"
+create_parent_dirs = true
+append = false
+format = "json"
+
+[logging.file.rotation]
+strategy = "interval"
+interval_hours = 24
+max_files = 7
+compress = false
