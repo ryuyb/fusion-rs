@@ -1,4 +1,4 @@
-use anyhow::Context as AnyhowContext;
+use anyhow::Context;
 use chrono::Utc;
 use flate2::{Compression, write::GzEncoder};
 use serde::Deserialize;

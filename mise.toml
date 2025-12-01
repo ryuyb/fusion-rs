@@ -1,0 +1,23 @@
+[tools]
+rust = "nightly"
+
+[tasks.run]
+description = "Build fmt/check, then run the server"
+depends = ["fmt", "check"]
+run = "cargo run -- serve"
+
+[tasks.fmt]
+description = "Format Rust sources"
+run = "cargo fmt"
+
+[tasks.check]
+description = "Check the workspace"
+run = "cargo check"
+
+[tasks.build-docker]
+description = "Build single-arch Docker image"
+run = "docker build -t fusion ."
+
+[tasks.build-docker-multiarch]
+description = "Build multi-arch Docker image (amd64/arm64)"
+run = "docker buildx build --platform linux/amd64,linux/arm64 -t fusion ."
