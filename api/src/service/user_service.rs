@@ -1,4 +1,4 @@
-use crate::dto::{CreateUserDto, UserDto};
+use crate::dto::{CreateUserDto, PagedResponse, UserDto};
 use crate::error::{AppResult, Entity, IntoAppResult};
 use crate::repository::UserRepository;
 use entity::user::Model;
@@ -40,5 +40,14 @@ impl UserService {
             .ok_or_else(|| Model::not_found_by("id", id))
             .map(|model| model.into())
             .into_app_result()
+    }
+
+    pub async fn list(&self, page: u64, page_size: u64) -> AppResult<PagedResponse<UserDto>> {
+        let (total, items) = self.repo.list(page, page_size).await?;
+        let items = items
+            .iter()
+            .map(|item| UserDto::from(item.to_owned()))
+            .collect();
+        Ok(PagedResponse::new(items, total, page, page_size))
     }
 }

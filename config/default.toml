@@ -14,7 +14,7 @@ graceful_shutdown_timeout_secs = 30
 [database]
 max_connections = 10
 min_connections = 2
-connect_timeout_secs = 30
+connect_timeout_secs = 15
 idle_timeout_secs = 600
 max_lifetime_secs = 1800
 run_migrations = true

@@ -2,7 +2,7 @@ use crate::dto::CreateUserDto;
 use crate::error::{AppResult, IntoAppResult};
 use entity::prelude::User;
 use entity::user::{ActiveModel, Model};
-use sea_orm::{DbConn, EntityTrait, Set};
+use sea_orm::{DbConn, EntityTrait, PaginatorTrait, Set};
 
 pub struct UserRepository {
     db: DbConn,
@@ -44,5 +44,12 @@ impl UserRepository {
             .one(&self.db)
             .await
             .into_app_result()
+    }
+
+    pub async fn list(&self, page: u64, page_size: u64) -> AppResult<(u64, Vec<Model>)> {
+        let paginator = User::find().paginate(&self.db, page_size);
+        let total = paginator.num_items().await?;
+        let user_list = paginator.fetch_page(page).await?;
+        Ok((total, user_list))
     }
 }

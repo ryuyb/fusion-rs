@@ -49,7 +49,5 @@ async fn health_check() -> Json<HashMap<String, String>> {
 }
 
 async fn handler_404() -> (StatusCode, impl IntoResponse) {
-    let message: &str = "nothing to see here";
-    let response = ErrorResponse::new(message.to_string());
-    (StatusCode::NOT_FOUND, Json(response))
+    (StatusCode::NOT_FOUND, Json(ErrorResponse::new("nothing to see here".to_string())))
 }

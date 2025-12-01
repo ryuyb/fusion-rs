@@ -4,6 +4,7 @@ use axum::response::{IntoResponse, Response};
 use axum::Json;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::sync::Arc;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ErrorResponse {
@@ -13,9 +14,6 @@ pub struct ErrorResponse {
     pub details: Option<serde_json::Value>,
 
     pub timestamp: i64,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub request_id: Option<String>,
 }
 
 impl ErrorResponse {
@@ -24,17 +22,11 @@ impl ErrorResponse {
             message,
             details: None,
             timestamp: chrono::Utc::now().timestamp(),
-            request_id: None,
         }
     }
 
     pub fn with_details(mut self, details: serde_json::Value) -> Self {
         self.details = Some(details);
-        self
-    }
-
-    pub fn with_request_id(mut self, request_id: String) -> Self {
-        self.request_id = Some(request_id.clone());
         self
     }
 }
@@ -89,6 +81,8 @@ impl IntoResponse for AppError {
         let status = self.status_code();
         let body = Json(self.to_error_response());
 
-        (status, body).into_response()
+        let mut response = (status, body).into_response();
+        response.extensions_mut().insert(Arc::new(self));
+        response
     }
 }

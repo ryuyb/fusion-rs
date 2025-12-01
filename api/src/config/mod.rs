@@ -1,6 +1,6 @@
 mod config;
 
-pub use config::{Config};
+pub use config::Config;
 
 use anyhow::Result;
 
