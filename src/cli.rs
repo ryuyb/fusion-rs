@@ -11,7 +11,7 @@ pub struct Cli {
 #[derive(Debug, Subcommand)]
 pub enum Commands {
     #[command(about = "Start the API server")]
-    Serve,
+    Serve(ServeArgs),
 
     #[command(arg_required_else_help = true, about = "Run database migrations")]
     Migrate(MigrateArgs),
@@ -30,4 +30,10 @@ pub enum MigrateCommands {
     Up,
     #[command(about = "Rollback migrations")]
     Down,
+}
+
+#[derive(Debug, Args)]
+pub struct ServeArgs {
+    #[arg(long, short, help = "Override server port from config", value_parser = clap::value_parser!(u16).range(1..=65535))]
+    pub port: Option<u16>,
 }
