@@ -15,9 +15,12 @@ use tower_http::{compression::CompressionLayer, cors::CorsLayer};
 pub fn create_router(state: Arc<AppState>) -> Router {
     let mut router = Router::new();
 
-    router = router
-        .route("/health", get(health_check))
-        .nest("/api", Router::new().nest("/user", user_routes(state.clone())));
+    router = router.route("/health", get(health_check)).nest(
+        "/api",
+        Router::new()
+            .nest("/auth", auth_routes())
+            .nest("/user", user_routes(state.clone())),
+    );
 
     router = router
         .fallback(handler_404)
@@ -41,6 +44,13 @@ fn user_routes(state: Arc<AppState>) -> Router<Arc<AppState>> {
         .route("/", post(handlers::user::create).get(handlers::user::list))
         .route("/{id}", get(handlers::user::find_by_id))
         .layer(from_fn_with_state(state, middleware::require_auth))
+}
+
+fn auth_routes() -> Router<Arc<AppState>> {
+    Router::new()
+        .route("/register", post(handlers::auth::register))
+        .route("/login", post(handlers::auth::login))
+        .route("/refresh", post(handlers::auth::refresh))
 }
 
 async fn health_check() -> Json<HashMap<String, String>> {

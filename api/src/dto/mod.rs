@@ -1,5 +1,7 @@
+mod auth;
 mod user;
 
+pub use auth::*;
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroU64;
 pub use user::*;

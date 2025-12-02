@@ -1,9 +1,9 @@
+use crate::AppState;
 use crate::error::AppError;
 use crate::utils::jwt::JwtClaims;
-use crate::AppState;
 use axum::extract::{Request, State};
-use axum::http::{header::AUTHORIZATION, HeaderMap};
-use axum::middleware::{from_fn_with_state, Next};
+use axum::http::{HeaderMap, header::AUTHORIZATION};
+use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use std::sync::Arc;
 use tracing::warn;

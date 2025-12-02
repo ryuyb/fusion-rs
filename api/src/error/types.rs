@@ -2,6 +2,7 @@ use crate::error::db::map_db_error;
 use anyhow::Error as AnyhowError;
 use sea_orm::DbErr;
 use thiserror::Error;
+use validator::ValidationErrors;
 
 #[derive(Debug, Error)]
 pub enum AppError {
@@ -44,6 +45,12 @@ impl From<AnyhowError> for AppError {
 impl From<DbErr> for AppError {
     fn from(e: DbErr) -> Self {
         map_db_error(e)
+    }
+}
+
+impl From<ValidationErrors> for AppError {
+    fn from(err: ValidationErrors) -> Self {
+        Self::BadRequest(err.to_string())
     }
 }
 

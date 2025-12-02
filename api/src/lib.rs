@@ -30,8 +30,8 @@ impl Application {
 
         let repos = Arc::new(repository::Repositories::new(db));
 
-        let services = Arc::new(service::Services::build(repos).await?);
         let jwt = Arc::new(JwtUtil::new(app_config.jwt.clone()));
+        let services = Arc::new(service::Services::build(repos, jwt.clone()).await?);
 
         let state = Arc::new(AppState {
             config: app_config.clone(),
