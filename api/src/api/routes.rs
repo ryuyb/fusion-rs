@@ -2,7 +2,7 @@ use crate::AppState;
 use crate::api::{handlers, middleware};
 use crate::error::ErrorResponse;
 use axum::http::StatusCode;
-use axum::middleware::from_fn;
+use axum::middleware::{from_fn, from_fn_with_state};
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Json, Router};
@@ -17,7 +17,7 @@ pub fn create_router(state: Arc<AppState>) -> Router {
 
     router = router
         .route("/health", get(health_check))
-        .nest("/api", Router::new().nest("/user", user_routes()));
+        .nest("/api", Router::new().nest("/user", user_routes(state.clone())));
 
     router = router
         .fallback(handler_404)
@@ -36,10 +36,11 @@ pub fn create_router(state: Arc<AppState>) -> Router {
     router.with_state(state)
 }
 
-fn user_routes() -> Router<Arc<AppState>> {
+fn user_routes(state: Arc<AppState>) -> Router<Arc<AppState>> {
     Router::new()
         .route("/", post(handlers::user::create).get(handlers::user::list))
         .route("/{id}", get(handlers::user::find_by_id))
+        .layer(from_fn_with_state(state, middleware::require_auth))
 }
 
 async fn health_check() -> Json<HashMap<String, String>> {

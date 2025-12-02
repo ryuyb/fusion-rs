@@ -22,6 +22,7 @@ pub enum TokenType {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct JwtClaims {
+    pub user_id: i32,
     pub sub: String,
     pub iss: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -56,12 +57,12 @@ impl JwtUtil {
         &self.config
     }
 
-    pub fn generate_access_token(&self, subject: impl Into<String>) -> JwtResult<String> {
-        self.generate_token(subject.into(), TokenType::Access)
+    pub fn generate_access_token(&self, user_id: i32) -> JwtResult<String> {
+        self.generate_token(user_id, TokenType::Access)
     }
 
-    pub fn generate_refresh_token(&self, subject: impl Into<String>) -> JwtResult<String> {
-        self.generate_token(subject.into(), TokenType::Refresh)
+    pub fn generate_refresh_token(&self, user_id: i32) -> JwtResult<String> {
+        self.generate_token(user_id, TokenType::Refresh)
     }
 
     pub fn decode(&self, token: &str) -> JwtResult<TokenData<JwtClaims>> {
@@ -85,8 +86,8 @@ impl JwtUtil {
         Ok(data.claims)
     }
 
-    fn generate_token(&self, subject: String, token_type: TokenType) -> JwtResult<String> {
-        let claims = JwtClaims::new(subject, token_type, &self.config);
+    fn generate_token(&self, user_id: i32, token_type: TokenType) -> JwtResult<String> {
+        let claims = JwtClaims::new(user_id, token_type, &self.config);
         Ok(encode(
             &Header::new(Algorithm::HS256),
             &claims,
@@ -110,7 +111,7 @@ impl JwtUtil {
 }
 
 impl JwtClaims {
-    pub fn new(subject: String, token_type: TokenType, config: &JwtConfig) -> Self {
+    pub fn new(user_id: i32, token_type: TokenType, config: &JwtConfig) -> Self {
         let issued_at = Utc::now();
         let duration = match token_type {
             TokenType::Access => config.access_token_ttl_secs,
@@ -119,7 +120,8 @@ impl JwtClaims {
         let expires_at = issued_at + Duration::seconds(duration as i64);
 
         Self {
-            sub: subject,
+            user_id: user_id,
+            sub: user_id.to_string(),
             iss: config.issuer.clone(),
             aud: config.audience.clone(),
             exp: expires_at.timestamp(),
@@ -147,13 +149,14 @@ mod tests {
     fn creates_and_validates_access_tokens() {
         let util = JwtUtil::new(config());
         let token = util
-            .generate_access_token("user-123")
+            .generate_access_token(123)
             .expect("token generation should succeed");
 
         let claims = util
             .decode_access_token(&token)
             .expect("token decoding should succeed");
-        assert_eq!(claims.sub, "user-123");
+        assert_eq!(claims.user_id, 123);
+        assert_eq!(claims.sub, "123");
         assert_eq!(claims.token_type, TokenType::Access);
         assert_eq!(claims.iss, "fusion-tests");
         assert_eq!(claims.aud.as_deref(), Some("fusion-clients"));
@@ -163,7 +166,7 @@ mod tests {
     fn rejects_invalid_token_type() {
         let util = JwtUtil::new(config());
         let refresh_token = util
-            .generate_refresh_token("user-0001")
+            .generate_refresh_token(1)
             .expect("refresh token generation should succeed");
 
         let err = util
@@ -177,7 +180,7 @@ mod tests {
     fn decodes_refresh_tokens() {
         let util = JwtUtil::new(config());
         let refresh_token = util
-            .generate_refresh_token("user-42")
+            .generate_refresh_token(42)
             .expect("refresh token generation should succeed");
 
         let claims = util
