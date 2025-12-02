@@ -1033,6 +1033,8 @@ version = "0.1.0"
 dependencies = [
  "api",
  "clap",
+ "migration",
+ "tokio",
 ]
 
 [[package]]

@@ -30,6 +30,8 @@ pub enum MigrateCommands {
     Up,
     #[command(about = "Rollback migrations")]
     Down,
+    #[command(about = "Show migration version")]
+    Version,
 }
 
 #[derive(Debug, Args)]

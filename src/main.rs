@@ -1,10 +1,13 @@
 use crate::cli::{Cli, Commands, MigrateCommands};
 use clap::Parser;
+use migration::sea_orm::{ConnectOptions, Database};
+use migration::Migrator;
 use std::env;
 
 mod cli;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let args = Cli::parse();
 
     match args.command {
@@ -16,11 +19,41 @@ fn main() {
                     env::set_var("FUSION_SERVER_PORT", port.to_string());
                 }
             }
-            api::main()
+            api::main().await
         }
-        Commands::Migrate(migrate_args) => match migrate_args.direction {
-            MigrateCommands::Up => println!("up"),
-            MigrateCommands::Down => println!("down"),
-        },
+        Commands::Migrate(migrate_args) => {
+            let database_url = env::var("FUSION_DATABASE_URL")
+                .or_else(|_| env::var("DATABASE_URL"))
+                .expect("FUSION_DATABASE_URL or DATABASE_URL must be set");
+            let opt = ConnectOptions::new(database_url).to_owned();
+            let db = Database::connect(opt)
+                .await
+                .expect("Database connection failed.");
+            use migration::MigratorTrait;
+            match migrate_args.direction {
+                MigrateCommands::Up => {
+                    Migrator::up(&db, None)
+                        .await
+                        .expect("Failed to run migrate up");
+                    println!("Successfully migrated.");
+                }
+                MigrateCommands::Down => {
+                    Migrator::down(&db, None)
+                        .await
+                        .expect("Failed to run migrate down");
+                    println!("Successfully migrated.");
+                }
+                MigrateCommands::Version => {
+                    let vec = Migrator::get_migration_with_status(&db)
+                        .await
+                        .expect("Failed to run migrate down");
+                    println!(
+                        "Current version: {}, status: {}",
+                        vec[0].name(),
+                        vec[0].status()
+                    );
+                }
+            }
+        }
     }
 }
