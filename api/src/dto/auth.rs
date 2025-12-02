@@ -1,10 +1,12 @@
 use crate::dto::CreateUserDto;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use validator::{Validate, ValidationError};
 
-#[derive(Debug, Serialize, Deserialize, Validate)]
+#[derive(Debug, Serialize, Deserialize, Validate, ToSchema)]
 pub struct RegisterRequest {
     #[validate(length(min = 3, max = 64))]
+    #[schema(example = "some")]
     pub username: String,
     #[validate(email)]
     pub email: String,
@@ -24,7 +26,7 @@ impl From<RegisterRequest> for CreateUserDto {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Validate)]
+#[derive(Debug, Serialize, Deserialize, Validate, ToSchema)]
 #[validate(schema(function = "validate_login_request"))]
 pub struct LoginRequest {
     #[validate(length(min = 1, max = 64))]
@@ -43,7 +45,7 @@ fn validate_login_request(req: &LoginRequest) -> Result<(), ValidationError> {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Validate)]
+#[derive(Debug, Serialize, Deserialize, Validate, ToSchema)]
 pub struct RefreshRequest {
     #[validate(length(min = 1))]
     pub refresh_token: String,

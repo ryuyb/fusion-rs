@@ -4,9 +4,10 @@ mod user;
 pub use auth::*;
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroU64;
+use utoipa::ToSchema;
 pub use user::*;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct PagedResponse<T> {
     pub items: Vec<T>,
     pub total: u64,

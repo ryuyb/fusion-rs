@@ -6,7 +6,17 @@ use crate::service::{AuthTokens, LoginIdentifier};
 use axum::Json;
 use axum::extract::State;
 use std::sync::Arc;
+use crate::api::doc::AUTH_TAG;
 
+#[utoipa::path(
+    post,
+    path = "/register",
+    tag = AUTH_TAG,
+    request_body = RegisterRequest,
+    responses(
+         (status = 200, description = "Register an new user", body = AuthTokens)
+    )
+)]
 pub async fn register(
     State(state): State<Arc<AppState>>,
     ValidatedJson(payload): ValidatedJson<RegisterRequest>,
@@ -14,6 +24,15 @@ pub async fn register(
     state.services.auth.register(payload).await.map(Json)
 }
 
+#[utoipa::path(
+    post,
+    path = "/login",
+    tag = AUTH_TAG,
+    request_body = LoginRequest,
+    responses(
+         (status = 200, description = "Login with username or email", body = AuthTokens)
+    )
+)]
 pub async fn login(
     State(state): State<Arc<AppState>>,
     ValidatedJson(payload): ValidatedJson<LoginRequest>,
@@ -27,6 +46,15 @@ pub async fn login(
         .map(Json)
 }
 
+#[utoipa::path(
+    post,
+    path = "/refresh",
+    tag = AUTH_TAG,
+    request_body = RefreshRequest,
+    responses(
+         (status = 200, description = "Refresh access token by refresh token", body = AuthTokens)
+    )
+)]
 pub async fn refresh(
     State(state): State<Arc<AppState>>,
     ValidatedJson(payload): ValidatedJson<RefreshRequest>,

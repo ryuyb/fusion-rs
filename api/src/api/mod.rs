@@ -1,3 +1,4 @@
+mod doc;
 mod extractors;
 mod handlers;
 mod middleware;

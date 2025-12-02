@@ -1,8 +1,9 @@
 use chrono::NaiveDateTime;
 use entity::user::Model;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct UserDto {
     pub id: i32,
     pub username: String,
@@ -23,7 +24,7 @@ impl From<Model> for UserDto {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct CreateUserDto {
     pub username: String,
     pub email: String,

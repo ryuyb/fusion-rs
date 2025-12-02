@@ -1,26 +1,34 @@
-use crate::AppState;
+use crate::api::doc::{ApiDoc, HEALTH_TAG};
 use crate::api::{handlers, middleware};
 use crate::error::ErrorResponse;
+use crate::AppState;
 use axum::http::StatusCode;
 use axum::middleware::{from_fn, from_fn_with_state};
 use axum::response::IntoResponse;
-use axum::routing::{get, post};
 use axum::{Json, Router};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::{compression::CompressionLayer, cors::CorsLayer};
+use utoipa::OpenApi;
+use utoipa_axum::router::OpenApiRouter;
+use utoipa_axum::routes;
+use utoipa_swagger_ui::SwaggerUi;
 
 pub fn create_router(state: Arc<AppState>) -> Router {
-    let mut router = Router::new();
+    let (mut router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
+        .routes(routes!(health_check))
+        .nest(
+            "/api/v1",
+            OpenApiRouter::new()
+                .nest("/auth", auth_routes())
+                .nest("/user", user_routes(state.clone())),
+        )
+        .split_for_parts();
 
-    router = router.route("/health", get(health_check)).nest(
-        "/api",
-        Router::new()
-            .nest("/auth", auth_routes())
-            .nest("/user", user_routes(state.clone())),
-    );
+    router = router
+        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", api.clone()));
 
     router = router
         .fallback(handler_404)
@@ -39,24 +47,33 @@ pub fn create_router(state: Arc<AppState>) -> Router {
     router.with_state(state)
 }
 
-fn user_routes(state: Arc<AppState>) -> Router<Arc<AppState>> {
-    Router::new()
-        .route("/", post(handlers::user::create).get(handlers::user::list))
-        .route("/{id}", get(handlers::user::find_by_id))
+fn user_routes(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
+    OpenApiRouter::new()
+        .routes(routes!(handlers::user::create))
+        .routes(routes!(handlers::user::list))
+        .routes(routes!(handlers::user::find_by_id))
         .layer(from_fn_with_state(state, middleware::require_auth))
 }
 
-fn auth_routes() -> Router<Arc<AppState>> {
-    Router::new()
-        .route("/register", post(handlers::auth::register))
-        .route("/login", post(handlers::auth::login))
-        .route("/refresh", post(handlers::auth::refresh))
+fn auth_routes() -> OpenApiRouter<Arc<AppState>> {
+    OpenApiRouter::new()
+        .routes(routes!(handlers::auth::register))
+        .routes(routes!(handlers::auth::login))
+        .routes(routes!(handlers::auth::refresh))
 }
 
-async fn health_check() -> Json<HashMap<String, String>> {
+#[utoipa::path(
+    get,
+    path = "/health",
+    tag = HEALTH_TAG,
+    responses(
+         (status = 200, description = "Success", body = HashMap<String, String>)
+    )
+)]
+async fn health_check() -> impl IntoResponse {
     let mut map = HashMap::new();
     map.insert("health".to_string(), "ok".to_string());
-    Json(map)
+    (StatusCode::OK, Json(map))
 }
 
 async fn handler_404() -> (StatusCode, impl IntoResponse) {

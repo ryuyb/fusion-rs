@@ -7,8 +7,9 @@ use chrono::{Duration, NaiveDateTime, Utc};
 use entity::user::Model;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use utoipa::ToSchema;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct AuthTokens {
     pub user_id: i32,
     pub access_token: String,
