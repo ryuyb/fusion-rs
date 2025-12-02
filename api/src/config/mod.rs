@@ -1,7 +1,7 @@
 mod config;
 pub mod logging;
 
-pub use config::Config;
+pub use config::{Config, JwtConfig};
 
 use anyhow::Result;
 

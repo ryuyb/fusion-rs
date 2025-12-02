@@ -22,3 +22,6 @@ strategy = "interval"
 interval_hours = 24
 max_files = 7
 compress = false
+
+[jwt]
+secret = "development_secret_that_is_long_enough_123456"

@@ -38,3 +38,10 @@ strategy = "size"
 max_size_bytes = 10485760
 max_files = 5
 compress = true
+
+[jwt]
+secret = "change_this_default_secret_change_me"
+issuer = "Fusion"
+audience = "fusion-clients"
+access_token_ttl_secs = 900
+refresh_token_ttl_secs = 1209600
