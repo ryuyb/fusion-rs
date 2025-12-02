@@ -1,7 +1,8 @@
 use crate::dto::{CreateUserDto, PagedResponse, UserDto};
-use crate::error::{AppError, AppResult, Entity, IntoAppResult};
+use crate::error::{AppResult, Entity, IntoAppResult};
 use crate::repository::UserRepository;
 use crate::utils::password;
+use anyhow::Context;
 use entity::user::Model;
 use std::num::NonZeroU64;
 use std::sync::Arc;
@@ -16,9 +17,8 @@ impl UserService {
     }
 
     pub async fn create(&self, user: CreateUserDto) -> AppResult<UserDto> {
-        let hashed_password = password::hash_password(&user.password).map_err(|err| {
-            AppError::InternalServerError(format!("Failed to hash password: {err}"))
-        })?;
+        let hashed_password =
+            password::hash_password(&user.password).context("Failed to hash password")?;
 
         Ok(self.repo.create(&user, &hashed_password).await?.into())
     }

@@ -34,7 +34,7 @@ impl ErrorResponse {
 impl AppError {
     pub fn status_code(&self) -> StatusCode {
         match self {
-            AppError::InternalServerError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::InternalServerError { .. } => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::BadRequest(_) => StatusCode::BAD_REQUEST,
             AppError::Unauthorized(_) => StatusCode::UNAUTHORIZED,
             AppError::Forbidden(_) => StatusCode::FORBIDDEN,

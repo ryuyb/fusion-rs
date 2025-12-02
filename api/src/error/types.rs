@@ -1,11 +1,15 @@
 use crate::error::db::map_db_error;
+use anyhow::Error as AnyhowError;
 use sea_orm::DbErr;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum AppError {
-    #[error("Internal server error: {0}")]
-    InternalServerError(String),
+    #[error("Internal server error: {source}")]
+    InternalServerError {
+        #[source]
+        source: AnyhowError,
+    },
 
     #[error("BadRequest: {0}")]
     BadRequest(String),
@@ -31,9 +35,9 @@ pub enum AppError {
     },
 }
 
-impl From<anyhow::Error> for AppError {
-    fn from(e: anyhow::Error) -> Self {
-        Self::InternalServerError(e.to_string())
+impl From<AnyhowError> for AppError {
+    fn from(source: AnyhowError) -> Self {
+        Self::InternalServerError { source }
     }
 }
 

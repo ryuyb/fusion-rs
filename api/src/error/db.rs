@@ -5,7 +5,7 @@ pub fn map_db_error(err: DbErr) -> AppError {
     if let Some(mapped) = try_map_sqlx_error(&err) {
         return mapped;
     }
-    AppError::InternalServerError(err.to_string())
+    AppError::InternalServerError { source: err.into() }
 }
 
 fn try_map_sqlx_error(err: &DbErr) -> Option<AppError> {
