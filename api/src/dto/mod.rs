@@ -4,8 +4,8 @@ mod user;
 pub use auth::*;
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroU64;
-use utoipa::ToSchema;
 pub use user::*;
+use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct PagedResponse<T> {

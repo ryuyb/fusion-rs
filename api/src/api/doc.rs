@@ -7,6 +7,10 @@ pub const USER_TAG: &str = "User";
 
 #[derive(OpenApi)]
 #[openapi(
+    info(
+        title = "Fusion",
+        description = "An api server for Fusion",
+    ),
     modifiers(&SecurityAddon),
     tags(
         (name = AUTH_TAG, description = "Authentication endpoints"),

@@ -1,12 +1,13 @@
 use crate::AppState;
 use crate::api::ValidatedJson;
+use crate::api::doc::AUTH_TAG;
 use crate::dto::{LoginRequest, RefreshRequest, RegisterRequest};
 use crate::error::{AppError, AppResult};
 use crate::service::{AuthTokens, LoginIdentifier};
 use axum::Json;
 use axum::extract::State;
+use axum::http::StatusCode;
 use std::sync::Arc;
-use crate::api::doc::AUTH_TAG;
 
 #[utoipa::path(
     post,
@@ -14,14 +15,19 @@ use crate::api::doc::AUTH_TAG;
     tag = AUTH_TAG,
     request_body = RegisterRequest,
     responses(
-         (status = 200, description = "Register an new user", body = AuthTokens)
+         (status = 201, description = "Register an new user", body = AuthTokens)
     )
 )]
 pub async fn register(
     State(state): State<Arc<AppState>>,
     ValidatedJson(payload): ValidatedJson<RegisterRequest>,
-) -> AppResult<Json<AuthTokens>> {
-    state.services.auth.register(payload).await.map(Json)
+) -> AppResult<(StatusCode, Json<AuthTokens>)> {
+    state
+        .services
+        .auth
+        .register(payload)
+        .await
+        .map(|token| (StatusCode::CREATED, Json(token)))
 }
 
 #[utoipa::path(

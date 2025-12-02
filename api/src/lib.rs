@@ -47,9 +47,11 @@ impl Application {
         })
     }
 
+    //noinspection HttpUrlsUsage
     pub async fn run(self) -> anyhow::Result<()> {
         let listener = tokio::net::TcpListener::bind(&self.config.server_address()).await?;
-        tracing::info!("Listening on {}", self.config.server_address());
+        tracing::info!("Listening on http://{}", self.config.server_address());
+        tracing::info!("Swagger docs on http://{}/swagger-ui", self.config.server_address());
         axum::serve(listener, self.router)
             .with_graceful_shutdown(shutdown_signal())
             .await?;

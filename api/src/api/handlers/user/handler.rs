@@ -1,12 +1,11 @@
-use crate::api::doc::{AUTH_TAG, USER_TAG};
+use crate::AppState;
+use crate::api::doc::USER_TAG;
 use crate::api::handlers::pagination::{Pagination, PaginationQuery};
 use crate::api::middleware::AuthContext;
 use crate::dto::{CreateUserDto, PagedResponse, UserDto};
 use crate::error::AppResult;
-use crate::AppState;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
-use axum::response::IntoResponse;
 use axum::{Extension, Json};
 use std::sync::Arc;
 
@@ -15,7 +14,7 @@ use std::sync::Arc;
     path = "/",
     tag = USER_TAG,
     responses(
-         (status = 200, description = "Create a new user", body = UserDto)
+         (status = 201, description = "Create a new user", body = UserDto)
     ),
     security(
         ("bearerAuth" = [])
@@ -24,8 +23,13 @@ use std::sync::Arc;
 pub async fn create(
     State(state): State<Arc<AppState>>,
     Json(data): Json<CreateUserDto>,
-) -> AppResult<Json<UserDto>> {
-    state.services.user.create(data).await.map(Json)
+) -> AppResult<(StatusCode, Json<UserDto>)> {
+    state
+        .services
+        .user
+        .create(data)
+        .await
+        .map(|user| (StatusCode::CREATED, Json(user)))
 }
 
 #[utoipa::path(

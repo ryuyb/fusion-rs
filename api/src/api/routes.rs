@@ -1,7 +1,7 @@
+use crate::AppState;
 use crate::api::doc::{ApiDoc, HEALTH_TAG};
 use crate::api::{handlers, middleware};
 use crate::error::ErrorResponse;
-use crate::AppState;
 use axum::http::StatusCode;
 use axum::middleware::{from_fn, from_fn_with_state};
 use axum::response::IntoResponse;
@@ -27,8 +27,7 @@ pub fn create_router(state: Arc<AppState>) -> Router {
         )
         .split_for_parts();
 
-    router = router
-        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", api.clone()));
+    router = router.merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", api.clone()));
 
     router = router
         .fallback(handler_404)
