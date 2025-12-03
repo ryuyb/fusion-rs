@@ -174,13 +174,6 @@ impl Layer<Registry> for LayerStack {
             .any(|layer| layer.enabled(metadata, ctx.clone()))
     }
 
-    fn max_level_hint(&self) -> Option<LevelFilter> {
-        self.layers
-            .iter()
-            .filter_map(|layer| layer.max_level_hint())
-            .max()
-    }
-
     fn on_new_span(
         &self,
         attrs: &span::Attributes<'_>,
@@ -190,6 +183,13 @@ impl Layer<Registry> for LayerStack {
         for layer in &self.layers {
             layer.on_new_span(attrs, id, ctx.clone());
         }
+    }
+
+    fn max_level_hint(&self) -> Option<LevelFilter> {
+        self.layers
+            .iter()
+            .filter_map(|layer| layer.max_level_hint())
+            .max()
     }
 
     fn on_record(
