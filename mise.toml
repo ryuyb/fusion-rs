@@ -18,6 +18,10 @@ run = "cargo check"
 description = "Run workspace tests"
 run = "cargo test --workspace"
 
+[tasks.build-release]
+description = "Build release binary"
+run = "cargo build --release"
+
 [tasks.build-docker]
 description = "Build single-arch Docker image"
 run = "docker build -t fusion ."

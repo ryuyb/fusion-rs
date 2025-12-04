@@ -1,6 +1,5 @@
 use crate::config::Config;
 use crate::job::JobManager;
-use crate::job::check_lived::CheckLivedJob;
 use crate::utils::jwt::JwtUtil;
 use std::sync::Arc;
 use tokio::signal;
