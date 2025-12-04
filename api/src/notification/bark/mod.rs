@@ -1,2 +1,4 @@
-mod bark;
-mod msg;
+mod client;
+pub mod msg;
+
+pub use client::BarkProvider;

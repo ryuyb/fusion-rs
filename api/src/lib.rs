@@ -1,5 +1,7 @@
 use crate::config::Config;
 use crate::job::JobManager;
+use crate::notification::bark::BarkProvider;
+use crate::notification::{NotificationCenter, NotificationProvider};
 use crate::utils::jwt::JwtUtil;
 use live_platform::LivePlatformProvider;
 use std::sync::Arc;
@@ -22,6 +24,7 @@ pub struct AppState {
     pub services: Arc<service::Services>,
     pub jwt: Arc<JwtUtil>,
     pub live_platform_provider: Arc<LivePlatformProvider>,
+    pub notification_center: Arc<NotificationCenter>,
 }
 
 pub struct Application {
@@ -42,11 +45,15 @@ impl Application {
 
         let live_platform_provider = Arc::new(LivePlatformProvider::new()?);
 
+        let bark_provider: Arc<dyn NotificationProvider> = Arc::new(BarkProvider::new()?);
+        let notification_center = Arc::new(NotificationCenter::with_providers(vec![bark_provider]));
+
         let state = Arc::new(AppState {
             config: app_config.clone(),
             services,
             jwt,
             live_platform_provider,
+            notification_center,
         });
 
         let router = api::routes::create_router(state.clone());
