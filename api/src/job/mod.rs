@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use anyhow::{Context, Result};
-use tokio::sync::{Semaphore, TryAcquireError};
+use tokio::sync::{AcquireError, OwnedSemaphorePermit, Semaphore, TryAcquireError};
 use tokio_cron_scheduler::Job;
 use tokio_cron_scheduler::JobScheduler;
 use tracing::{error, info};
@@ -55,41 +55,23 @@ impl JobManager {
                 let job_guard = concurrency_guard.clone();
                 let job_config = job_config;
                 Box::pin(async move {
-                    let _permit = match job_config.overlap_strategy {
-                        JobOverlapStrategy::Skip => match job_guard.try_acquire_owned() {
-                            Ok(permit) => permit,
-                            Err(TryAcquireError::NoPermits) => {
-                                info!(
-                                    job = job.name(),
-                                    "Previous execution still running, skipping"
-                                );
-                                return;
-                            }
-                            Err(TryAcquireError::Closed) => {
-                                error!(
-                                    job = job.name(),
-                                    "Concurrency guard unexpectedly closed, skipping"
-                                );
-                                return;
-                            }
-                        },
-                        JobOverlapStrategy::Wait => match job_guard.acquire_owned().await {
-                            Ok(permit) => permit,
-                            Err(err) => {
-                                error!(
-                                    job = job.name(),
-                                    ?err,
-                                    "Failed to acquire concurrency guard, skipping"
-                                );
-                                return;
-                            }
-                        },
+                    let job_name = job.name();
+                    let permit = JobManager::acquire_job_permit(
+                        job_name,
+                        job_guard,
+                        job_config.overlap_strategy,
+                    )
+                    .await;
+
+                    let _permit = match permit {
+                        Some(permit) => permit,
+                        None => return,
                     };
 
-                    info!(job = job.name(), "Starting cron job");
+                    info!(job = job_name, "Starting cron job");
                     match job.execute(state).await {
-                        Ok(_) => info!(job = job.name(), "Cron job completed"),
-                        Err(err) => error!(job = job.name(), ?err, "Cron job failed"),
+                        Ok(_) => info!(job = job_name, "Cron job completed"),
+                        Err(err) => error!(job = job_name, ?err, "Cron job failed"),
                     }
                 })
             })
@@ -115,5 +97,54 @@ impl JobManager {
 
     pub async fn shutdown(&mut self) -> Result<()> {
         Ok(self.sched.shutdown().await.context("Job shutdown failed")?)
+    }
+
+    async fn acquire_job_permit(
+        job_name: &'static str,
+        guard: Arc<Semaphore>,
+        strategy: JobOverlapStrategy,
+    ) -> Option<OwnedSemaphorePermit> {
+        match strategy {
+            JobOverlapStrategy::Skip => Self::try_acquire(job_name, guard),
+            JobOverlapStrategy::Wait => Self::wait_for_permit(job_name, guard).await,
+        }
+    }
+
+    fn try_acquire(job_name: &'static str, guard: Arc<Semaphore>) -> Option<OwnedSemaphorePermit> {
+        match guard.try_acquire_owned() {
+            Ok(permit) => Some(permit),
+            Err(TryAcquireError::NoPermits) => {
+                info!(job = job_name, "Previous execution still running, skipping");
+                None
+            }
+            Err(TryAcquireError::Closed) => {
+                error!(
+                    job = job_name,
+                    "Concurrency guard unexpectedly closed, skipping"
+                );
+                None
+            }
+        }
+    }
+
+    async fn wait_for_permit(
+        job_name: &'static str,
+        guard: Arc<Semaphore>,
+    ) -> Option<OwnedSemaphorePermit> {
+        match guard.acquire_owned().await {
+            Ok(permit) => Some(permit),
+            Err(err) => {
+                Self::log_acquire_error(job_name, err);
+                None
+            }
+        }
+    }
+
+    fn log_acquire_error(job_name: &'static str, err: AcquireError) {
+        error!(
+            job = job_name,
+            ?err,
+            "Failed to acquire concurrency guard, skipping"
+        );
     }
 }
