@@ -2,6 +2,7 @@ mod application;
 mod config;
 mod database;
 mod environment;
+mod job;
 mod jwt;
 pub mod logging;
 mod server;

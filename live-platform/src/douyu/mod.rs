@@ -2,10 +2,10 @@ mod dto;
 
 use crate::douyu::dto::BetardResponse;
 use crate::{LivePlatform, LiveStatus, Platform, StreamerInfo};
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use async_trait::async_trait;
 use chrono::DateTime;
-use reqwest::header::{HeaderValue, CONTENT_TYPE};
+use reqwest::header::{CONTENT_TYPE, HeaderValue};
 use scraper::{Html, Selector};
 
 const BASE_URL: &str = "https://douyu.com";
@@ -46,7 +46,7 @@ impl Douyu {
                 Err(anyhow::anyhow!(
                     "Douyu betard is prompt but did not receive message"
                 ))
-            }
+            };
         }
 
         let betard = serde_json::from_str::<BetardResponse>(&resp_text)

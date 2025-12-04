@@ -1,4 +1,6 @@
 use crate::config::Config;
+use crate::job::JobManager;
+use crate::job::check_lived::CheckLivedJob;
 use crate::utils::jwt::JwtUtil;
 use std::sync::Arc;
 use tokio::signal;
@@ -8,6 +10,7 @@ mod config;
 mod domain;
 mod dto;
 mod error;
+mod job;
 mod repository;
 mod service;
 mod utils;
@@ -22,6 +25,8 @@ pub struct AppState {
 pub struct Application {
     pub config: Config,
     pub router: axum::Router,
+    pub job_manager: JobManager,
+    pub state: Arc<AppState>,
 }
 
 impl Application {
@@ -39,16 +44,22 @@ impl Application {
             jwt,
         });
 
-        let router = api::routes::create_router(state);
+        let router = api::routes::create_router(state.clone());
+
+        let job_manager = JobManager::new(state.clone()).await?;
 
         Ok(Self {
             config: app_config.clone(),
             router,
+            job_manager,
+            state,
         })
     }
 
     //noinspection HttpUrlsUsage
-    pub async fn run(self) -> anyhow::Result<()> {
+    pub async fn run(mut self) -> anyhow::Result<()> {
+        self.start_job().await?;
+
         let listener = tokio::net::TcpListener::bind(&self.config.server_address()).await?;
         tracing::info!("Listening on http://{}", self.config.server_address());
         tracing::info!(
@@ -59,6 +70,29 @@ impl Application {
             .with_graceful_shutdown(shutdown_signal())
             .await?;
 
+        self.job_manager.shutdown().await?;
+
+        Ok(())
+    }
+
+    pub async fn start_job(&self) -> anyhow::Result<()> {
+        for (name, cfg) in self.config.jobs.iter() {
+            if !cfg.enabled {
+                continue;
+            }
+            match self.job_manager.available_jobs.get(name) {
+                Some(job) => {
+                    self.job_manager
+                        .add_job(cfg.cron_expr.as_str(), job.clone())
+                        .await?;
+                    tracing::info!("Adding job {}", name);
+                }
+                None => anyhow::bail!("Job {} not available", name),
+            };
+        }
+
+        self.job_manager.start().await?;
+        tracing::info!("Job manager started");
         Ok(())
     }
 }

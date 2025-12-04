@@ -1,7 +1,7 @@
 use crate::cli::{Cli, Commands, MigrateCommands};
 use clap::Parser;
-use migration::sea_orm::{ConnectOptions, Database};
 use migration::Migrator;
+use migration::sea_orm::{ConnectOptions, Database};
 use std::env;
 
 mod cli;

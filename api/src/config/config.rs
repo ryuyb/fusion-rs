@@ -2,9 +2,11 @@ use super::{
     application::ApplicationConfig, database::DatabaseConfig, environment::AppEnvironment,
     jwt::JwtConfig, logging::LoggingConfig, server::ServerConfig,
 };
+use crate::config::job::JobConfig;
 use anyhow::Context;
 use config::{Config as ConfigBuilder, Environment, File as ConfigFile};
 use serde::Deserialize;
+use std::collections::HashMap;
 use std::env;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -16,6 +18,8 @@ pub struct Config {
     #[serde(default)]
     pub logging: LoggingConfig,
     pub jwt: JwtConfig,
+    #[serde(default)]
+    pub jobs: HashMap<String, JobConfig>,
 }
 
 impl Config {
@@ -75,6 +79,12 @@ impl Config {
 
         self.logging.validate()?;
         self.jwt.validate()?;
+
+        for (name, job_cfg) in self.jobs.iter() {
+            job_cfg
+                .validate()
+                .with_context(|| format!("Failed to validate job {}", name))?;
+        }
 
         Ok(())
     }

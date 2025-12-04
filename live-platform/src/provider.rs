@@ -1,4 +1,5 @@
 use crate::bilibili::Bilibili;
+use crate::douyu::Douyu;
 use crate::types::{LivePlatform, Platform};
 use crate::{LiveStatus, StreamerInfo};
 use anyhow::{Result, anyhow};
@@ -14,6 +15,9 @@ impl LivePlatformProvider {
 
         let bilibili = Bilibili::new()?;
         platforms.insert(Platform::Bilibili, Box::new(bilibili));
+
+        let douyu = Douyu::new()?;
+        platforms.insert(Platform::Douyu, Box::new(douyu));
 
         Ok(Self { platforms })
     }
