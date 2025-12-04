@@ -12,3 +12,6 @@ clap = { version = "4.5", features = ["derive"] }
 
 api = { path = "api" }
 migration = { path = "migration" }
+
+[build-dependencies]
+time = { version = "0.3", features = ["formatting"] }

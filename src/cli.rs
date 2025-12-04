@@ -15,6 +15,9 @@ pub enum Commands {
 
     #[command(arg_required_else_help = true, about = "Run database migrations")]
     Migrate(MigrateArgs),
+
+    #[command(about = "Print build metadata")]
+    Version,
 }
 
 #[derive(Debug, Args)]

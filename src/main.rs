@@ -6,6 +6,11 @@ use std::env;
 
 mod cli;
 
+const BUILD_GIT_TAG: &str = env!("FUSION_BUILD_GIT_TAG");
+const BUILD_GIT_COMMIT: &str = env!("FUSION_BUILD_GIT_COMMIT");
+const BUILD_TIMESTAMP: &str = env!("FUSION_BUILD_TIMESTAMP");
+const BUILD_RUST_VERSION: &str = env!("FUSION_BUILD_RUST_VERSION");
+
 #[tokio::main]
 async fn main() {
     let args = Cli::parse();
@@ -54,6 +59,12 @@ async fn main() {
                     );
                 }
             }
+        }
+        Commands::Version => {
+            println!("version        : {}", BUILD_GIT_TAG);
+            println!("git commit     : {}", BUILD_GIT_COMMIT);
+            println!("build time     : {}", BUILD_TIMESTAMP);
+            println!("rustc version  : {}", BUILD_RUST_VERSION);
         }
     }
 }
