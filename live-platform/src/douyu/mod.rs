@@ -55,10 +55,10 @@ impl Douyu {
     }
 
     fn betard_is_prompt_html(content_type: Option<HeaderValue>, text: &str) -> bool {
-        if let Some(ct) = content_type {
-            if let Ok(ct_str) = ct.to_str() {
-                return ct_str.to_ascii_lowercase().contains("text/html");
-            }
+        if let Some(ct) = content_type
+            && let Ok(ct_str) = ct.to_str()
+        {
+            return ct_str.to_ascii_lowercase().contains("text/html");
         }
         text.contains("<title>提示信息 -斗鱼</title>")
     }

@@ -68,12 +68,12 @@ impl DatabaseConfig {
     }
 
     pub fn masked_url(&self) -> String {
-        if let Some(idx) = self.url.find('@') {
-            if let Some(start) = self.url[..idx].rfind(':') {
-                let mut masked = self.url.clone();
-                masked.replace_range(start + 1..idx, "****");
-                return masked;
-            }
+        if let Some(idx) = self.url.find('@')
+            && let Some(start) = self.url[..idx].rfind(':')
+        {
+            let mut masked = self.url.clone();
+            masked.replace_range(start + 1..idx, "****");
+            return masked;
         }
         self.url.clone()
     }

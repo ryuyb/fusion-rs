@@ -120,7 +120,7 @@ impl JwtClaims {
         let expires_at = issued_at + Duration::seconds(duration as i64);
 
         Self {
-            user_id: user_id,
+            user_id,
             sub: user_id.to_string(),
             iss: config.issuer.clone(),
             aud: config.audience.clone(),

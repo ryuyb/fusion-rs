@@ -17,7 +17,7 @@ impl CheckLivedJob {
 #[async_trait]
 impl AppJob for CheckLivedJob {
     fn name(&self) -> &'static str {
-        &"check-lived"
+        "check-lived"
     }
 
     fn config(&self) -> JobConfig {

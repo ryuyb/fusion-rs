@@ -53,7 +53,7 @@ impl JobManager {
 
     pub async fn add_job(&self, cron: &str, job: &RegisteredJob) -> Result<uuid::Uuid> {
         let job_handle = job.job();
-        let job_config = job_handle.config();
+        let overlap_strategy = job.overlap_strategy();
         let concurrency_guard = job.guard();
         let state_for_closure = self.state.clone();
         let job_locked =
@@ -61,15 +61,11 @@ impl JobManager {
                 let job = job_handle.clone();
                 let state = state_for_closure.clone();
                 let job_guard = concurrency_guard.clone();
-                let job_config = job_config;
+                let overlap_strategy = overlap_strategy;
                 Box::pin(async move {
                     let job_name = job.name();
-                    let permit = JobManager::acquire_job_permit(
-                        job_name,
-                        job_guard,
-                        job_config.overlap_strategy,
-                    )
-                    .await;
+                    let permit =
+                        JobManager::acquire_job_permit(job_name, job_guard, overlap_strategy).await;
 
                     let _permit = match permit {
                         Some(permit) => permit,
@@ -92,19 +88,15 @@ impl JobManager {
     }
 
     pub async fn remove_job(&self, guid: uuid::Uuid) -> Result<()> {
-        Ok(self
-            .sched
-            .remove(&guid)
-            .await
-            .context("Job remove failed")?)
+        self.sched.remove(&guid).await.context("Job remove failed")
     }
 
     pub async fn start(&self) -> Result<()> {
-        Ok(self.sched.start().await.context("Job start failed")?)
+        self.sched.start().await.context("Job start failed")
     }
 
     pub async fn shutdown(&mut self) -> Result<()> {
-        Ok(self.sched.shutdown().await.context("Job shutdown failed")?)
+        self.sched.shutdown().await.context("Job shutdown failed")
     }
 
     async fn acquire_job_permit(

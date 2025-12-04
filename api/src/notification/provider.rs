@@ -48,8 +48,9 @@ impl NotificationMessage {
         self.metadata.get(key).map(|value| value.as_str())
     }
 
-    pub fn set_url(&mut self, url: impl Into<String>) {
+    pub fn set_url(&mut self, url: impl Into<String>) -> &mut Self {
         self.url = Some(url.into());
+        self
     }
 
     pub fn insert_metadata(

@@ -19,7 +19,7 @@ pub struct PagedResponse<T> {
 impl<T> PagedResponse<T> {
     pub fn new(items: Vec<T>, total: u64, page: u64, page_size: NonZeroU64) -> Self {
         let page_size_value = page_size.get();
-        let total_pages = (total + page_size_value - 1) / page_size_value;
+        let total_pages = total.div_ceil(page_size_value);
 
         Self {
             items,

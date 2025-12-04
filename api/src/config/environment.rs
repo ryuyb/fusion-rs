@@ -1,9 +1,10 @@
 use serde::Deserialize;
 use std::str::FromStr;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum AppEnvironment {
+    #[default]
     Development,
     Production,
     Test,
@@ -32,11 +33,5 @@ impl FromStr for AppEnvironment {
             "test" => Ok(AppEnvironment::Test),
             _ => Err(ParseEnvironmentError),
         }
-    }
-}
-
-impl Default for AppEnvironment {
-    fn default() -> Self {
-        AppEnvironment::Development
     }
 }

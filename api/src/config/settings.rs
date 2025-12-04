@@ -32,9 +32,7 @@ impl Config {
             .add_source(
                 ConfigFile::with_name(&format!("{}/{}", config_dir, run_env)).required(false),
             )
-            .add_source(
-                ConfigFile::with_name(&format!("{}/local", config_dir).as_ref()).required(false),
-            )
+            .add_source(ConfigFile::with_name(&format!("{}/local", config_dir)).required(false))
             .add_source(
                 Environment::with_prefix("FUSION")
                     .separator("_")

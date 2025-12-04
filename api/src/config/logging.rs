@@ -289,7 +289,7 @@ impl LoggingConfig {
         if self.console_enabled || layers.is_empty() {
             layers.push(build_layer(
                 self.format,
-                || io::stdout(),
+                io::stdout,
                 self.console_color,
                 level_filter,
                 env_filter.clone(),
@@ -343,14 +343,12 @@ impl LogRotationConfig {
 impl LogFileConfig {
     fn build_writer(&self) -> anyhow::Result<(NonBlocking, WorkerGuard)> {
         let path = PathBuf::from(&self.path);
-        if self.create_parent_dirs {
-            if let Some(parent) = path.parent() {
-                if !parent.as_os_str().is_empty() {
-                    fs::create_dir_all(parent).with_context(|| {
-                        format!("Failed to create log directory {}", parent.display())
-                    })?;
-                }
-            }
+        if self.create_parent_dirs
+            && let Some(parent) = path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            fs::create_dir_all(parent)
+                .with_context(|| format!("Failed to create log directory {}", parent.display()))?;
         }
 
         let strategy = self
@@ -528,10 +526,10 @@ impl RotatingFileWriter {
             file.flush()?;
         }
 
-        if let Some(_rotated_path) = self.strategy.rotate_file(&self.path)? {
-            if let Some(max_files) = self.strategy.max_files() {
-                prune_old_files(&self.path, max_files)?;
-            }
+        if let Some(_rotated_path) = self.strategy.rotate_file(&self.path)?
+            && let Some(max_files) = self.strategy.max_files()
+        {
+            prune_old_files(&self.path, max_files)?;
         }
 
         self.state = Self::open_initial_state(&self.path, self.append)?;
@@ -547,10 +545,7 @@ impl Write for RotatingFileWriter {
             self.state.bytes_written += written as u64;
             Ok(written)
         } else {
-            Err(io::Error::new(
-                io::ErrorKind::Other,
-                "log file not initialized",
-            ))
+            Err(io::Error::other("log file not initialized"))
         }
     }
 

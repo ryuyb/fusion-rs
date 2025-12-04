@@ -69,26 +69,25 @@ fn map_foreign_key_violation(db_error: &dyn sqlx::error::DatabaseError) -> AppEr
 }
 
 fn parse_detail_key_value(detail: Option<&str>, column: Option<&str>) -> (String, String) {
-    if let Some(detail) = detail {
-        if let Some(key_start) = detail.find("Key (") {
-            let after_key = &detail[key_start + 5..];
-            if let Some(field_end) = after_key.find(')') {
-                let field = after_key[..field_end].to_string();
-                if let Some(eq_idx) = after_key.find(")=") {
-                    let after_eq = &after_key[eq_idx + 2..];
-                    if after_eq.starts_with('(') {
-                        let after_paren = &after_eq[1..];
-                        if let Some(value_end) = after_paren.find(')') {
-                            let value = after_paren[..value_end].to_string();
-                            return (field, value);
-                        }
-                    } else if let Some(value_end) = after_eq.find(')') {
-                        let value = after_eq[..value_end].to_string();
+    if let Some(detail) = detail
+        && let Some(key_start) = detail.find("Key (")
+    {
+        let after_key = &detail[key_start + 5..];
+        if let Some(field_end) = after_key.find(')') {
+            let field = after_key[..field_end].to_string();
+            if let Some(eq_idx) = after_key.find(")=") {
+                let after_eq = &after_key[eq_idx + 2..];
+                if let Some(after_paren) = after_eq.strip_prefix('(') {
+                    if let Some(value_end) = after_paren.find(')') {
+                        let value = after_paren[..value_end].to_string();
                         return (field, value);
                     }
+                } else if let Some(value_end) = after_eq.find(')') {
+                    let value = after_eq[..value_end].to_string();
+                    return (field, value);
                 }
-                return (field, String::new());
             }
+            return (field, String::new());
         }
     }
 

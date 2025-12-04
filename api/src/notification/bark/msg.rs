@@ -17,7 +17,7 @@ use std::fmt::Display;
 /// let mut msg = Msg::with_body("body");
 ///
 /// // set some fields
-/// msg.set_level(Level::ACTIVE);
+/// msg.set_level(Level::Active);
 /// msg.set_badge(1);
 /// // and so on
 /// ```
@@ -89,17 +89,18 @@ pub struct Msg {
 /// passive: Only adds the notification to the notification list, will not display on the screen.
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub enum Level {
-    ACTIVE,
-    TIMESENSITIVE,
-    PASSIVE,
+    Active,
+    TimeSensitive,
+    Passive,
 }
 
+#[allow(dead_code)] // Public builder helpers retained for potential external consumers
 impl Level {
     pub fn from_str(str: &str) -> Option<Self> {
         match str.to_lowercase().as_str() {
-            "timesensitive" => Some(Self::TIMESENSITIVE),
-            "passive" => Some(Self::PASSIVE),
-            "active" => Some(Self::ACTIVE),
+            "timesensitive" => Some(Self::TimeSensitive),
+            "passive" => Some(Self::Passive),
+            "active" => Some(Self::Active),
             _ => None,
         }
     }
@@ -108,14 +109,15 @@ impl Level {
 impl Display for Level {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
-            Level::ACTIVE => "active",
-            Level::TIMESENSITIVE => "timeSensitive",
-            Level::PASSIVE => "passive",
+            Level::Active => "active",
+            Level::TimeSensitive => "timeSensitive",
+            Level::Passive => "passive",
         };
         write!(f, "{}", str)
     }
 }
 
+#[allow(dead_code)] // Rich builder surface kept for callers beyond current crate usage
 impl Msg {
     /// Creates a new `Msg` instance with a title and body.
     ///
@@ -175,10 +177,7 @@ impl Msg {
     }
 
     pub fn is_deleted(&self) -> bool {
-        match self.is_deleted {
-            Some(x) => x == true,
-            None => false,
-        }
+        self.is_deleted.unwrap_or(false)
     }
 
     /// Sets the interruption level of the notification.
@@ -312,7 +311,7 @@ impl Msg {
     }
 
     pub fn set_id(&mut self, msg_id: &str) -> &mut Self {
-        if msg_id.as_bytes().len() >= 64 {
+        if msg_id.len() >= 64 {
             panic!("Invalid msg_id length.The value of this key must not exceed 64 bytes.");
         }
         self.id = Some(msg_id.to_string());

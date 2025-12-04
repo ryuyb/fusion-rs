@@ -1,11 +1,11 @@
 mod application;
-mod config;
 mod database;
 mod environment;
 mod job;
 mod jwt;
 pub mod logging;
 mod server;
+mod settings;
 
 #[allow(unused_imports)]
 pub use self::{
@@ -16,7 +16,7 @@ pub use self::{
     logging::{LogLevel, LoggingConfig},
     server::ServerConfig,
 };
-pub use config::Config;
+pub use settings::Config;
 
 use anyhow::Result;
 
