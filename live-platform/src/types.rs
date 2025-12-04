@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-#[derive(Debug, Serialize, Deserialize, Hash, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Hash, PartialEq, Eq, Clone, Copy)]
 pub enum Platform {
     Douyu,
     Bilibili,
@@ -53,7 +53,7 @@ pub struct LiveStatus {
 pub trait LivePlatform: Send + Sync {
     fn platform(&self) -> Platform;
 
-    async fn fetch_streamer_info(&self, platform_streamer_id: String) -> Result<StreamerInfo>;
+    async fn fetch_streamer_info(&self, platform_streamer_id: &str) -> Result<StreamerInfo>;
 
-    async fn check_live_status(&self, platform_streamer_id: String) -> Result<LiveStatus>;
+    async fn check_live_status(&self, platform_streamer_id: &str) -> Result<LiveStatus>;
 }

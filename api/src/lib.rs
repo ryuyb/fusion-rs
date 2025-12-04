@@ -92,10 +92,10 @@ impl Application {
             if !cfg.enabled {
                 continue;
             }
-            match self.job_manager.available_jobs.get(name) {
+            match self.job_manager.registry().get(name) {
                 Some(job) => {
                     self.job_manager
-                        .add_job(cfg.cron_expr.as_str(), job.clone())
+                        .add_job(cfg.cron_expr.as_str(), job)
                         .await?;
                     tracing::info!("Adding job {}", name);
                 }

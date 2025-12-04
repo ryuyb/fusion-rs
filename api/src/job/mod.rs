@@ -1,7 +1,9 @@
 pub mod check_lived;
+mod registry;
 mod types;
 
-use std::collections::HashMap;
+pub use registry::{JobRegistry, RegisteredJob};
+
 use std::sync::Arc;
 
 use anyhow::{Context, Result};
@@ -12,16 +14,22 @@ use tracing::{error, info};
 
 use crate::AppState;
 use crate::job::check_lived::CheckLivedJob;
-use crate::job::types::{AppJob, JobOverlapStrategy};
+use crate::job::types::JobOverlapStrategy;
 
 pub struct JobManager {
-    pub available_jobs: HashMap<String, Arc<dyn AppJob>>,
+    registry: JobRegistry,
     state: Arc<AppState>,
     sched: JobScheduler,
 }
 
 impl JobManager {
     pub async fn new(state: Arc<AppState>) -> Result<Self> {
+        let mut registry = JobRegistry::new();
+        registry.register(CheckLivedJob::new());
+        Self::with_registry(state, registry).await
+    }
+
+    pub async fn with_registry(state: Arc<AppState>, registry: JobRegistry) -> Result<Self> {
         let mut sched = JobScheduler::new()
             .await
             .context("Failed to create job manager")?;
@@ -32,25 +40,25 @@ impl JobManager {
             })
         }));
 
-        let mut available_jobs: HashMap<String, Arc<dyn AppJob>> = HashMap::new();
-        let check_lived_job = Arc::new(CheckLivedJob::new());
-        available_jobs.insert(check_lived_job.name().to_string(), check_lived_job);
-
         Ok(Self {
-            available_jobs,
+            registry,
             sched,
             state,
         })
     }
 
-    pub async fn add_job(&self, cron: &str, job: Arc<dyn AppJob>) -> Result<uuid::Uuid> {
-        let job_for_closure = Arc::clone(&job);
+    pub fn registry(&self) -> &JobRegistry {
+        &self.registry
+    }
+
+    pub async fn add_job(&self, cron: &str, job: &RegisteredJob) -> Result<uuid::Uuid> {
+        let job_handle = job.job();
+        let job_config = job_handle.config();
+        let concurrency_guard = job.guard();
         let state_for_closure = self.state.clone();
-        let job_config = job_for_closure.config();
-        let concurrency_guard = Arc::new(Semaphore::new(1));
         let job_locked =
             Job::new_cron_job_async_tz(cron, chrono_tz::Asia::Shanghai, move |_uuid, _l| {
-                let job = Arc::clone(&job_for_closure);
+                let job = job_handle.clone();
                 let state = state_for_closure.clone();
                 let job_guard = concurrency_guard.clone();
                 let job_config = job_config;

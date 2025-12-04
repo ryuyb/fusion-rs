@@ -4,47 +4,63 @@ use crate::types::{LivePlatform, Platform};
 use crate::{LiveStatus, StreamerInfo};
 use anyhow::{Result, anyhow};
 use std::collections::HashMap;
+use std::sync::Arc;
 
 pub struct LivePlatformProvider {
-    platforms: HashMap<Platform, Box<dyn LivePlatform>>,
+    platforms: HashMap<Platform, Arc<dyn LivePlatform>>,
 }
 
 impl LivePlatformProvider {
     pub fn new() -> Result<Self> {
-        let mut platforms: HashMap<Platform, Box<dyn LivePlatform>> = HashMap::new();
+        let mut provider = Self {
+            platforms: HashMap::new(),
+        };
 
-        let bilibili = Bilibili::new()?;
-        platforms.insert(Platform::Bilibili, Box::new(bilibili));
+        provider.register(Bilibili::new()?);
+        provider.register(Douyu::new()?);
 
-        let douyu = Douyu::new()?;
-        platforms.insert(Platform::Douyu, Box::new(douyu));
-
-        Ok(Self { platforms })
+        Ok(provider)
     }
 
-    pub fn get_platform(&self, platform: &Platform) -> Option<&Box<dyn LivePlatform>> {
-        self.platforms.get(platform)
+    pub fn register<P>(&mut self, platform: P) -> &mut Self
+    where
+        P: LivePlatform + 'static,
+    {
+        self.register_arc(Arc::new(platform))
+    }
+
+    pub fn register_arc(&mut self, provider: Arc<dyn LivePlatform>) -> &mut Self {
+        let platform = provider.platform();
+        self.platforms.insert(platform, provider);
+        self
+    }
+
+    pub fn get(&self, platform: Platform) -> Option<&dyn LivePlatform> {
+        self.platforms
+            .get(&platform)
+            .map(|provider| provider.as_ref())
+    }
+
+    fn provider(&self, platform: Platform) -> Result<&dyn LivePlatform> {
+        self.get(platform)
+            .ok_or_else(|| anyhow!("Unsupported platform: {}", platform))
     }
 
     pub async fn fetch_streamer_info(
         &self,
         platform: Platform,
-        room_id: String,
+        room_id: impl AsRef<str>,
     ) -> Result<StreamerInfo> {
-        let p = self
-            .get_platform(&platform)
-            .ok_or(anyhow!("Unsupported platform: {}", platform))?;
-        p.fetch_streamer_info(room_id).await
+        let provider = self.provider(platform)?;
+        provider.fetch_streamer_info(room_id.as_ref()).await
     }
 
     pub async fn check_live_status(
         &self,
         platform: Platform,
-        room_id: String,
+        room_id: impl AsRef<str>,
     ) -> Result<LiveStatus> {
-        let p = self
-            .get_platform(&platform)
-            .ok_or(anyhow!("Unsupported platform: {}", platform))?;
-        p.check_live_status(room_id).await
+        let provider = self.provider(platform)?;
+        provider.check_live_status(room_id.as_ref()).await
     }
 }

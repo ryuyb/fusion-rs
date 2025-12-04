@@ -21,7 +21,7 @@ impl Bilibili {
         Ok(Self { client })
     }
 
-    async fn fetch_room_info(&self, platform_streamer_id: String) -> Result<RoomInfoResp> {
+    async fn fetch_room_info(&self, platform_streamer_id: &str) -> Result<RoomInfoResp> {
         let resp = self
             .client
             .get("https://api.live.bilibili.com/room/v1/Room/get_info")
@@ -78,13 +78,13 @@ impl LivePlatform for Bilibili {
         Platform::Bilibili
     }
 
-    async fn fetch_streamer_info(&self, platform_streamer_id: String) -> Result<StreamerInfo> {
-        let room_info = self.fetch_room_info(platform_streamer_id.clone()).await?;
+    async fn fetch_streamer_info(&self, platform_streamer_id: &str) -> Result<StreamerInfo> {
+        let room_info = self.fetch_room_info(platform_streamer_id).await?;
         let master_info = self.fetch_master_info(room_info.uid).await?;
 
         Ok(StreamerInfo {
-            platform: Platform::Douyu,
-            platform_streamer_id: platform_streamer_id.clone(),
+            platform: Platform::Bilibili,
+            platform_streamer_id: platform_streamer_id.to_string(),
             name: master_info.uname,
             avatar: master_info.face,
             description: room_info.description,
@@ -92,7 +92,7 @@ impl LivePlatform for Bilibili {
         })
     }
 
-    async fn check_live_status(&self, platform_streamer_id: String) -> Result<LiveStatus> {
+    async fn check_live_status(&self, platform_streamer_id: &str) -> Result<LiveStatus> {
         let resp = self.fetch_room_info(platform_streamer_id).await?;
         let mut start_time: Option<NaiveDateTime> = None;
         if resp.live_status == 1 && resp.live_time != "0000-00-00 00:00:00" {
@@ -118,7 +118,7 @@ mod tests {
     async fn test_fetch_streamer_info() {
         let bilibili = Bilibili::new().unwrap();
 
-        let result = bilibili.fetch_streamer_info("7734200".to_string()).await;
+        let result = bilibili.fetch_streamer_info("7734200").await;
         assert!(result.is_ok());
         println!("{:?}", result);
     }
@@ -127,7 +127,7 @@ mod tests {
     async fn test_check_live_status() {
         let bilibili = Bilibili::new().unwrap();
 
-        let result = bilibili.check_live_status("7734200".to_string()).await;
+        let result = bilibili.check_live_status("7734200").await;
         assert!(result.is_ok());
         println!("{:?}", result);
     }

@@ -22,7 +22,7 @@ impl Douyu {
         Ok(Self { client })
     }
 
-    async fn fetch_betard_info(&self, platform_streamer_id: String) -> Result<BetardResponse> {
+    async fn fetch_betard_info(&self, platform_streamer_id: &str) -> Result<BetardResponse> {
         let response = self
             .client
             .get(format!(
@@ -43,7 +43,7 @@ impl Douyu {
             return if let Some(message) = Self::betard_extract_prompt_messgae(&resp_text) {
                 Err(anyhow!("Douyu betard error with message: {}", message))
             } else {
-                Err(anyhow::anyhow!(
+                Err(anyhow!(
                     "Douyu betard is prompt but did not receive message"
                 ))
             };
@@ -85,12 +85,12 @@ impl LivePlatform for Douyu {
         Platform::Douyu
     }
 
-    async fn fetch_streamer_info(&self, platform_streamer_id: String) -> Result<StreamerInfo> {
-        let response = self.fetch_betard_info(platform_streamer_id.clone()).await?;
+    async fn fetch_streamer_info(&self, platform_streamer_id: &str) -> Result<StreamerInfo> {
+        let response = self.fetch_betard_info(platform_streamer_id).await?;
 
         Ok(StreamerInfo {
             platform: Platform::Douyu,
-            platform_streamer_id: platform_streamer_id.clone(),
+            platform_streamer_id: platform_streamer_id.to_string(),
             name: response.room.room_name,
             avatar: response.room.avatar.big,
             description: response.room.show_details,
@@ -98,7 +98,7 @@ impl LivePlatform for Douyu {
         })
     }
 
-    async fn check_live_status(&self, platform_streamer_id: String) -> Result<LiveStatus> {
+    async fn check_live_status(&self, platform_streamer_id: &str) -> Result<LiveStatus> {
         let response = self.fetch_betard_info(platform_streamer_id).await?;
 
         let start_time =
@@ -125,7 +125,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_fetch_streamer_info() {
-        let result = douyu().fetch_streamer_info("60937".to_string()).await;
+        let result = douyu().fetch_streamer_info("60937").await;
         match result {
             Ok(v) => println!("{:?}", v),
             Err(error) => println!("debug error: {:?}", error),
@@ -134,7 +134,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_fetch_live_status() {
-        let result = douyu().check_live_status("60937".to_string()).await;
+        let result = douyu().check_live_status("60937").await;
         match result {
             Ok(v) => println!("{:?}", v),
             Err(error) => println!("debug error: {:?}", error),
