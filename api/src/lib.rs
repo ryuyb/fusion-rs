@@ -1,6 +1,7 @@
 use crate::config::Config;
 use crate::job::JobManager;
 use crate::utils::jwt::JwtUtil;
+use live_platform::LivePlatformProvider;
 use std::sync::Arc;
 use tokio::signal;
 
@@ -10,6 +11,7 @@ mod domain;
 mod dto;
 mod error;
 mod job;
+mod notification;
 mod repository;
 mod service;
 mod utils;
@@ -19,6 +21,7 @@ pub struct AppState {
     pub config: Config,
     pub services: Arc<service::Services>,
     pub jwt: Arc<JwtUtil>,
+    pub live_platform_provider: Arc<LivePlatformProvider>,
 }
 
 pub struct Application {
@@ -37,10 +40,13 @@ impl Application {
         let jwt = Arc::new(JwtUtil::new(app_config.jwt.clone()));
         let services = Arc::new(service::Services::build(repos, jwt.clone()).await?);
 
+        let live_platform_provider = Arc::new(LivePlatformProvider::new()?);
+
         let state = Arc::new(AppState {
             config: app_config.clone(),
             services,
             jwt,
+            live_platform_provider,
         });
 
         let router = api::routes::create_router(state.clone());
