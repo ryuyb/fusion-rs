@@ -1,64 +1,35 @@
 # syntax=docker/dockerfile:1.4
 
-# Build on the host architecture and cross-compile to the target so we avoid QEMU crashes.
-FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS builder
-
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
-ENV DEBIAN_FRONTEND=noninteractive \
-    MISE_DATA_DIR="/mise" \
-    MISE_CONFIG_DIR="/mise" \
-    MISE_CACHE_DIR="/mise/cache" \
-    MISE_INSTALL_PATH="/usr/local/bin/mise" \
-    PATH="/mise/shims:/root/.cargo/bin:${PATH}"
+FROM --platform=$BUILDPLATFORM rust:1.91.1-alpine3.22 AS builder
 
 ARG TARGETARCH
-ARG TARGETPLATFORM
-ARG BUILDPLATFORM
 
-RUN apt-get update \
-    && apt-get -y --no-install-recommends install \
-        sudo curl git ca-certificates build-essential pkg-config libssl-dev musl-tools \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN curl https://mise.run | sh
+RUN set -x \
+    && apk add --no-cache musl-dev perl make pkgconfig openssl-dev openssl-libs-static wget curl ca-certificates
 
 WORKDIR /app
 
-COPY mise.toml .
-RUN mise trust && mise install \
-    && mise use -g "zig@latest" \
-    && mise exec -- rustup target add x86_64-unknown-linux-musl aarch64-unknown-linux-musl \
-    && mise exec -- cargo install cargo-zigbuild
-
-# Pre-fetch dependencies without hardcoding workspace members; any new crate gets picked up automatically.
-RUN --mount=type=bind,source=.,target=/workspace,ro \
-    --mount=type=cache,target=/root/.cargo/registry,sharing=locked \
-    --mount=type=cache,target=/root/.cargo/git,sharing=locked \
-    cd /workspace && mise trust /workspace/mise.toml && mise exec -- cargo fetch --locked
-
-# Build actual binary, handling multi-arch compilation.
 COPY . .
-RUN --mount=type=cache,target=/root/.cargo/registry,sharing=locked \
-    --mount=type=cache,target=/root/.cargo/git,sharing=locked \
-    case "$TARGETARCH" in \
-        arm64) \
-            export CARGO_BUILD_TARGET=aarch64-unknown-linux-musl ;; \
-        amd64) \
-            export CARGO_BUILD_TARGET=x86_64-unknown-linux-musl ;; \
+
+RUN case "$TARGETARCH" in \
+        "amd64") \
+            RUST_TARGET="x86_64-unknown-linux-musl" \
+            MUSL="x86_64-linux-musl" \
+            SHA512="52abd1a56e670952116e35d1a62e048a9b6160471d988e16fa0e1611923dd108a581d2e00874af5eb04e4968b1ba32e0eb449a1f15c3e4d5240ebe09caf5a9f3" ;; \
+        "arm64") \
+            RUST_TARGET="aarch64-unknown-linux-musl" \
+            MUSL="aarch64-linux-musl" \
+            SHA512="8695ff86979cdf30fbbcd33061711f5b1ebc3c48a87822b9ca56cde6d3a22abd4dab30fdcd1789ac27c6febbaeb9e5bde59d79d66552fae53d54cc1377a19272" ;; \
         *) \
-            export CARGO_BUILD_TARGET="" ;; \
-    esac && \
-    if [ -n "$CARGO_BUILD_TARGET" ]; then \
-        # cargo-zigbuild cross-compiles without needing QEMU
-        mise exec -- cargo zigbuild --release --bin fusion --target "$CARGO_BUILD_TARGET" -- \
-            --config net.git-fetch-with-cli=true && \
-        cp "target/$CARGO_BUILD_TARGET/release/fusion" /tmp/fusion-bin; \
-    else \
-        mise exec -- cargo build --release --bin fusion && \
-        cp target/release/fusion /tmp/fusion-bin; \
-    fi && \
-    strip /tmp/fusion-bin
+            echo "Unsupported TARGETARCH=$TARGETARCH" && exit 1 ;; \
+    esac \
+    && wget "https://github.com/AaronChen0/musl-cc-mirror/releases/download/2021-09-23/${MUSL}-cross.tgz" \
+    && echo "${SHA512}  ${MUSL}-cross.tgz" | sha512sum -c - \
+    && tar -xzf "${MUSL}-cross.tgz" -C /root/ \
+    && CC="/root/${MUSL}-cross/bin/${MUSL}-gcc" \
+    && rustup target add "${RUST_TARGET}" \
+    && RUSTFLAGS="-C linker=${CC}" CC="${CC}" cargo build --release --target "${RUST_TARGET}" \
+    && cp "target/${RUST_TARGET}/release/fusion" /tmp/fusion-bin
 
 FROM gcr.io/distroless/static-debian12:nonroot AS runtime
 

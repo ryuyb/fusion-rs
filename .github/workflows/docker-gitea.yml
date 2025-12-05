@@ -10,6 +10,7 @@ on:
 
 env:
   IMAGE_NAME: ${{ gitea.repository }}
+  CARGO_TERM_COLOR: always
 
 jobs:
   build-and-push:
@@ -19,7 +20,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -54,7 +55,7 @@ jobs:
             type=raw,value=latest,enable=${{ gitea.ref == 'refs/heads/main' }}
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
