@@ -13,7 +13,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 RUN apt-get update \
     && apt-get -y --no-install-recommends install \
-        sudo curl git ca-certificates build-essential pkg-config libssl-dev musl-tools jq \
+        sudo curl git ca-certificates build-essential pkg-config libssl-dev musl-tools \
     && rm -rf /var/lib/apt/lists/*
 
 RUN curl https://mise.run | sh
