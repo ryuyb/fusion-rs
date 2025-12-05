@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.4
+
 FROM debian:bookworm-slim AS builder
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -11,7 +13,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 RUN apt-get update \
     && apt-get -y --no-install-recommends install \
-        sudo curl git ca-certificates build-essential pkg-config libssl-dev musl-tools \
+        sudo curl git ca-certificates build-essential pkg-config libssl-dev musl-tools jq \
     && rm -rf /var/lib/apt/lists/*
 
 RUN curl https://mise.run | sh
@@ -26,13 +28,15 @@ COPY Cargo.toml Cargo.lock ./
 COPY api/Cargo.toml api/Cargo.toml
 COPY entity/Cargo.toml entity/Cargo.toml
 COPY migration/Cargo.toml migration/Cargo.toml
+COPY live-platform/Cargo.toml live-platform/Cargo.toml
 
 # Create placeholder sources to allow dependency fetching.
-RUN mkdir -p src api/src entity/src migration/src \
+RUN mkdir -p src api/src entity/src migration/src live-platform/src \
     && echo "fn main() {}" > src/main.rs \
     && echo "" > api/src/lib.rs \
     && echo "" > entity/src/lib.rs \
     && echo "" > migration/src/lib.rs \
+    && echo "" > live-platform/src/lib.rs \
     && mise exec -- cargo fetch
 
 # Build actual binary, handling multi-arch compilation.
