@@ -1,0 +1,15 @@
+target
+docker-cache
+dist
+tmp
+log
+logs
+.git
+.gitignore
+.github
+.idea
+.vscode
+*.swp
+*.swo
+*.tmp
+*.log
