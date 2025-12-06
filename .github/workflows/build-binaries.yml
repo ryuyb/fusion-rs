@@ -1,0 +1,67 @@
+name: Build Linux Binaries (amd64 & arm64)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu]
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Install cross toolchain (aarch64)
+        if: contains(matrix.target, 'aarch64')
+        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+          targets: ${{ matrix.target }}
+
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fusion-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/fusion
+
+  build-macos:
+    runs-on: macos-14
+    env:
+      # macOS runner is arm64; keep consistent target triple
+      TARGET: aarch64-apple-darwin
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+          targets: ${{ env.TARGET }}
+
+      - name: Build release binary
+        run: cargo build --release --target ${{ env.TARGET }}
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fusion-${{ env.TARGET }}
+          path: target/${{ env.TARGET }}/release/fusion

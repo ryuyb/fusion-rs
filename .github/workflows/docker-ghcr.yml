@@ -20,12 +20,9 @@ jobs:
       packages: write
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
-          fetch-depth: '0'
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+          fetch-depth: 0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -49,13 +46,26 @@ jobs:
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
+      - name: Build dependency cache (cargo-chef)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: chef-cook
+          platforms: linux/amd64,linux/arm64
+          push: false
+          cache-from: type=gha,scope=fusion-chef
+          cache-to: type=gha,mode=max,scope=fusion-chef
+
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           platforms: linux/amd64,linux/arm64
-          cache-from: type=gha
+          cache-from: |
+            type=gha,scope=fusion-chef
+            type=gha
           cache-to: type=gha,mode=max
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
